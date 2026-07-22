@@ -104,3 +104,17 @@ export function publishWeek(from: string, to: string) {
     authOpts({ method: 'POST', body: JSON.stringify({ from, to }) }),
   );
 }
+
+export interface AutoPlanResult {
+  filled: number;
+  remainingOpen: number;
+  estimatedCost: number;
+  assignments: Array<{ shiftId: string; employee: string; reason: string }>;
+}
+
+export function autoPlan(weekStart: string): Promise<AutoPlanResult> {
+  return apiFetch<AutoPlanResult>(
+    '/ai/auto-plan',
+    authOpts({ method: 'POST', body: JSON.stringify({ weekStart }) }),
+  );
+}

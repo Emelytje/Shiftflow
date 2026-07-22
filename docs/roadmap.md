@@ -14,6 +14,7 @@ verdergaan.
 | 5c | Backend — Uren | ✅ | Klokken in/uit, over-/nacht-/weekenduren (unit-getest), goedkeuring |
 | 6a | Frontend — Planner | ✅ | Weekplanner met drag & drop, filters, dupliceren, publiceren |
 | 6b | Frontend — Verlof & Uren | ✅ | Verlofpagina + klok-widget + registratie-overzicht |
+| 7 | AI — Auto-planning | ✅ | Regelgebaseerde motor vult open shifts (beschikbaarheid, overuren, kosten), knop in planner |
 | 4 | UI/UX (verfijning) | ⏳ | Wireframes → high-fidelity, componentbibliotheek, dag/maand-weergave |
 | 5 | Backend (rest) | ⏳ | Documents, reporting, notifications, chat |
 | 6 | Frontend (rest) | ⏳ | Portalen per rol, admin CMS, rapporten-UI |

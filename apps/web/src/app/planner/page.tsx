@@ -18,6 +18,7 @@ import {
   deleteShift,
   duplicateWeek,
   publishWeek,
+  autoPlan,
 } from '@/lib/shifts';
 import {
   startOfWeek,
@@ -164,6 +165,26 @@ export default function PlannerPage() {
     await load();
   }
 
+  const [aiBusy, setAiBusy] = useState(false);
+  async function onAutoPlan() {
+    setNotice('');
+    setError('');
+    setAiBusy(true);
+    try {
+      const res = await autoPlan(weekStart.toISOString());
+      setNotice(
+        `🤖 AI-planning: ${res.filled} open shift(s) ingevuld` +
+          (res.remainingOpen ? `, ${res.remainingOpen} niet gevuld (geen geschikte medewerker)` : '') +
+          `. Geschatte kost: € ${res.estimatedCost.toFixed(2)}.`,
+      );
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'AI-planning mislukt');
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
   const rows: Array<{ id: string | null; label: string; color?: string; hours?: number }> = [
     { id: null, label: 'Open shifts' },
     ...employees.map((e) => ({
@@ -199,6 +220,13 @@ export default function PlannerPage() {
             </select>
             <button onClick={onDuplicate} className="btn-ghost px-3 py-1.5 text-sm">Week dupliceren</button>
             <button onClick={onPublish} className="btn-ghost px-3 py-1.5 text-sm">Publiceren</button>
+            <button
+              onClick={onAutoPlan}
+              disabled={aiBusy}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-3 py-1.5 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-60"
+            >
+              {aiBusy ? 'AI plant…' : '🤖 AI-planning'}
+            </button>
             <button onClick={() => openNew(null, days[0])} className="btn-primary px-3 py-1.5 text-sm">+ Shift</button>
           </div>
         </div>

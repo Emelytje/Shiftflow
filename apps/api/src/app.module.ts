@@ -9,6 +9,7 @@ import { CompaniesModule } from './companies/companies.module';
 import { SchedulingModule } from './scheduling/scheduling.module';
 import { LeaveModule } from './leave/leave.module';
 import { TimeTrackingModule } from './time-tracking/time-tracking.module';
+import { AiModule } from './ai/ai.module';
 import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -24,6 +25,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     SchedulingModule,
     LeaveModule,
     TimeTrackingModule,
+    AiModule,
     HealthModule,
   ],
   providers: [
