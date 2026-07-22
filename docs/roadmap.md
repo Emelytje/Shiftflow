@@ -24,9 +24,9 @@ verdergaan.
 | — | Documenten | ✅ | Contracten/attesten/certificaten uploaden & downloaden met vervaldatum-waarschuwing |
 | — | Kiosk-/tabletmodus | ✅ | Gedeeld scherm: medewerkers in-/uitklokken door te tikken op hun tegel |
 | — | Chat | ✅ | 1-op-1 en groepsgesprekken tussen collega's, met deelnemer-afscherming |
-| 4 | UI/UX (verfijning) | ⏳ | Wireframes → high-fidelity, componentbibliotheek, dag/maand-weergave |
-| 5 | Backend (rest) | ⏳ | Documents, reporting, notifications, chat |
-| 6 | Frontend (rest) | ⏳ | Portalen per rol, admin CMS, rapporten-UI |
+| — | Planner dag/week/maand | ✅ | Dag-, week- en maandweergave (kalender) met weergaveschakelaar |
+| — | Abonnementen / billing | ⛔ | Bewust overgeslagen op verzoek |
+| 4 | UI/UX (verfijning) | ⏳ | High-fidelity iteraties, componentbibliotheek |
 | 7 | AI | ⏳ | Auto-planning, voorspellingen, aanbevelingen, AI-chat voor planners |
 | 8 | Testen | ⏳ | Unit-, integratie- en e2e-tests; testplan |
 | 9 | Beveiliging | ⏳ | 2FA, encryptie, audit-interceptor, GDPR-tooling, securityplan |

@@ -57,3 +57,36 @@ export function durationHours(startIso: string, endIso: string, breakMinutes = 0
   const ms = new Date(endIso).getTime() - new Date(startIso).getTime();
   return Math.max(0, ms / 3_600_000 - breakMinutes / 60);
 }
+
+export function startOfMonth(date: Date): Date {
+  const d = new Date(date.getFullYear(), date.getMonth(), 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export function endOfMonth(date: Date): Date {
+  const d = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+/** Volledige kalenderraster (maandag-start) dat de maand omvat. */
+export function monthGridDays(date: Date): Date[] {
+  const first = startOfMonth(date);
+  const gridStart = startOfWeek(first);
+  const last = endOfMonth(date);
+  const gridEnd = addDays(startOfWeek(last), 6);
+  const days: Date[] = [];
+  for (let d = new Date(gridStart); d <= gridEnd; d = addDays(d, 1)) {
+    days.push(new Date(d));
+  }
+  return days;
+}
+
+const MONTH_NAMES = [
+  'januari', 'februari', 'maart', 'april', 'mei', 'juni',
+  'juli', 'augustus', 'september', 'oktober', 'november', 'december',
+];
+export function monthLabel(date: Date): string {
+  return `${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
+}

@@ -29,11 +29,19 @@ import {
   timeLabel,
   moveToDay,
   durationHours,
+  startOfMonth,
+  endOfMonth,
+  monthGridDays,
+  monthLabel,
 } from '@/lib/dates';
+
+type ViewMode = 'day' | 'week' | 'month';
 
 export default function PlannerPage() {
   const router = useRouter();
-  const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [anchor, setAnchor] = useState<Date>(() => new Date());
+  const weekStart = useMemo(() => startOfWeek(anchor), [anchor]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -43,14 +51,37 @@ export default function PlannerPage() {
   const [notice, setNotice] = useState('');
   const [draft, setDraft] = useState<ShiftDraft | null>(null);
 
-  const days = useMemo(() => weekDays(weekStart), [weekStart]);
+  // Dagen voor de dag-/weekraster-weergave.
+  const days = useMemo(() => {
+    if (viewMode === 'day') {
+      const d = new Date(anchor);
+      d.setHours(0, 0, 0, 0);
+      return [d];
+    }
+    return weekDays(weekStart);
+  }, [viewMode, anchor, weekStart]);
+
+  const monthDays = useMemo(() => monthGridDays(anchor), [anchor]);
+
+  // Ophaalbereik per weergave.
+  const range = useMemo(() => {
+    if (viewMode === 'day') {
+      const from = new Date(anchor);
+      from.setHours(0, 0, 0, 0);
+      return { from, to: addDays(from, 1) };
+    }
+    if (viewMode === 'month') {
+      return { from: startOfMonth(anchor), to: addDays(endOfMonth(anchor), 1) };
+    }
+    return { from: weekStart, to: addDays(weekStart, 7) };
+  }, [viewMode, anchor, weekStart]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const from = weekStart.toISOString();
-      const to = addDays(weekStart, 7).toISOString();
+      const from = range.from.toISOString();
+      const to = range.to.toISOString();
       const [s, e, c] = await Promise.all([
         fetchShifts(from, to),
         fetchEmployees(),
@@ -64,7 +95,7 @@ export default function PlannerPage() {
     } finally {
       setLoading(false);
     }
-  }, [weekStart]);
+  }, [range]);
 
   useEffect(() => {
     if (!getToken()) {
@@ -151,11 +182,19 @@ export default function PlannerPage() {
     });
   }
 
+  function navigate(dir: 1 | -1) {
+    setAnchor((a) => {
+      if (viewMode === 'day') return addDays(a, dir);
+      if (viewMode === 'week') return addDays(a, dir * 7);
+      return new Date(a.getFullYear(), a.getMonth() + dir, 1);
+    });
+  }
+
   async function onDuplicate() {
     setNotice('');
     const res = await duplicateWeek(weekStart.toISOString(), addDays(weekStart, 7).toISOString());
     setNotice(`${res.duplicated} shifts gekopieerd naar volgende week.`);
-    setWeekStart((w) => addDays(w, 7));
+    setAnchor((a) => addDays(a, 7));
   }
 
   async function onPublish() {
@@ -203,14 +242,28 @@ export default function PlannerPage() {
           <div>
             <h1 className="text-2xl font-semibold">Planner</h1>
             <p className="text-sm text-white/50">
-              Week van {dayLabel(days[0])} t/m {dayLabel(days[6])}
+              {viewMode === 'day' && dayLabel(days[0])}
+              {viewMode === 'week' && `Week van ${dayLabel(days[0])} t/m ${dayLabel(days[6])}`}
+              {viewMode === 'month' && monthLabel(anchor)}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {/* Weergaveschakelaar */}
+            <div className="flex items-center gap-1 rounded-xl border border-white/10 p-0.5">
+              {(['day', 'week', 'month'] as ViewMode[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setViewMode(m)}
+                  className={`rounded-lg px-3 py-1.5 text-sm transition ${viewMode === m ? 'bg-sky-500/20 text-sky-300' : 'text-white/60 hover:bg-white/5'}`}
+                >
+                  {m === 'day' ? 'Dag' : m === 'week' ? 'Week' : 'Maand'}
+                </button>
+              ))}
+            </div>
             <div className="flex items-center gap-1">
-              <button onClick={() => setWeekStart((w) => addDays(w, -7))} className="btn-ghost px-3 py-1.5 text-sm">‹</button>
-              <button onClick={() => setWeekStart(startOfWeek(new Date()))} className="btn-ghost px-3 py-1.5 text-sm">Vandaag</button>
-              <button onClick={() => setWeekStart((w) => addDays(w, 7))} className="btn-ghost px-3 py-1.5 text-sm">›</button>
+              <button onClick={() => navigate(-1)} className="btn-ghost px-3 py-1.5 text-sm">‹</button>
+              <button onClick={() => setAnchor(new Date())} className="btn-ghost px-3 py-1.5 text-sm">Vandaag</button>
+              <button onClick={() => navigate(1)} className="btn-ghost px-3 py-1.5 text-sm">›</button>
             </div>
             <select className="input w-auto py-1.5 text-sm" value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)}>
               <option value="">Alle afdelingen</option>
@@ -234,88 +287,132 @@ export default function PlannerPage() {
         {error && <p className="mt-4 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p>}
         {notice && <p className="mt-4 rounded-lg border border-sky-400/30 bg-sky-500/10 px-3 py-2 text-sm text-sky-200">{notice}</p>}
 
-        {/* Grid */}
-        <div className="mt-5 overflow-x-auto">
-          <div className="min-w-[900px]">
-            {/* Kop met dagen */}
-            <div className="grid grid-cols-[180px_repeat(7,1fr)] gap-px">
-              <div className="glass rounded-lg p-2 text-xs font-medium text-white/50">Medewerker</div>
-              {days.map((d) => (
-                <div
-                  key={d.toISOString()}
-                  className={`glass rounded-lg p-2 text-center text-xs font-medium ${
-                    isSameDay(d, new Date()) ? 'text-sky-300' : 'text-white/60'
-                  }`}
-                >
-                  {dayLabel(d)}
-                </div>
+        {/* Maandweergave (kalender) */}
+        {viewMode === 'month' ? (
+          <div className="mt-5">
+            <div className="grid grid-cols-7 gap-px">
+              {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map((d) => (
+                <div key={d} className="glass rounded-lg p-2 text-center text-xs font-medium text-white/50">{d}</div>
               ))}
             </div>
-
-            {/* Rijen */}
-            {loading ? (
-              <p className="mt-6 text-center text-white/40">Laden…</p>
-            ) : (
-              rows.map((row) => (
-                <div key={row.id ?? 'open'} className="mt-px grid grid-cols-[180px_repeat(7,1fr)] gap-px">
-                  <div className="glass flex items-center justify-between rounded-lg p-2">
-                    <div className="flex items-center gap-2">
-                      {row.color && <span className="h-2.5 w-2.5 rounded-full" style={{ background: row.color }} />}
-                      <span className={`text-sm ${row.id ? 'text-white/85' : 'text-amber-300'}`}>{row.label}</span>
+            <div className="mt-px grid grid-cols-7 gap-px">
+              {monthDays.map((day) => {
+                const inMonth = day.getMonth() === anchor.getMonth();
+                const dayShifts = visibleShifts.filter((s) => isSameDay(new Date(s.startsAt), day));
+                return (
+                  <button
+                    key={day.toISOString()}
+                    onClick={() => { setAnchor(new Date(day)); setViewMode('day'); }}
+                    className={`glass min-h-[92px] rounded-lg p-1.5 text-left transition hover:border-sky-400/30 ${inMonth ? '' : 'opacity-40'}`}
+                  >
+                    <div className={`text-xs font-medium ${isSameDay(day, new Date()) ? 'text-sky-300' : 'text-white/60'}`}>
+                      {day.getDate()}
                     </div>
-                    {row.hours !== undefined && (
-                      <span className="text-xs text-white/40">{row.hours.toFixed(0)}u</span>
-                    )}
-                  </div>
-
-                  {days.map((day) => {
-                    const cellShifts = shiftsFor(row.id, day);
-                    return (
-                      <div
-                        key={day.toISOString()}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                          const id = e.dataTransfer.getData('text/shiftId');
-                          if (id) handleDrop(row.id, day, id);
-                        }}
-                        onClick={() => cellShifts.length === 0 && openNew(row.id, day)}
-                        className="glass min-h-[64px] rounded-lg p-1.5 transition hover:border-sky-400/30"
-                      >
-                        <div className="space-y-1">
-                          {cellShifts.map((s) => (
-                            <button
-                              key={s.id}
-                              draggable
-                              onDragStart={(e) => e.dataTransfer.setData('text/shiftId', s.id)}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDraft(draftFromShift(s));
-                              }}
-                              className="w-full cursor-grab rounded-lg border-l-4 bg-white/10 px-2 py-1 text-left text-xs transition hover:bg-white/20 active:cursor-grabbing"
-                              style={{ borderLeftColor: s.color ?? s.department?.color ?? '#38BDF8' }}
-                            >
-                              <div className="font-medium text-white">
-                                {timeLabel(s.startsAt)}–{timeLabel(s.endsAt)}
-                              </div>
-                              <div className="truncate text-white/60">
-                                {s.department?.name ?? s.title ?? 'Shift'}
-                                {!s.isPublished && <span className="ml-1 text-amber-300/80">•concept</span>}
-                              </div>
-                            </button>
-                          ))}
+                    <div className="mt-1 space-y-0.5">
+                      {dayShifts.slice(0, 3).map((s) => (
+                        <div
+                          key={s.id}
+                          className="truncate rounded border-l-2 bg-white/10 px-1 py-0.5 text-[10px] text-white/80"
+                          style={{ borderLeftColor: s.color ?? s.department?.color ?? '#38BDF8' }}
+                        >
+                          {timeLabel(s.startsAt)} {s.assignee?.firstName ?? s.department?.name ?? 'Open'}
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))
-            )}
+                      ))}
+                      {dayShifts.length > 3 && (
+                        <div className="text-[10px] text-white/40">+{dayShifts.length - 3} meer</div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        ) : (
+          <>
+            {/* Dag-/weekraster */}
+            <div className="mt-5 overflow-x-auto">
+              <div style={{ minWidth: viewMode === 'day' ? 420 : 900 }}>
+                {/* Kop met dagen */}
+                <div className="grid gap-px" style={{ gridTemplateColumns: `180px repeat(${days.length}, minmax(0,1fr))` }}>
+                  <div className="glass rounded-lg p-2 text-xs font-medium text-white/50">Medewerker</div>
+                  {days.map((d) => (
+                    <div
+                      key={d.toISOString()}
+                      className={`glass rounded-lg p-2 text-center text-xs font-medium ${
+                        isSameDay(d, new Date()) ? 'text-sky-300' : 'text-white/60'
+                      }`}
+                    >
+                      {dayLabel(d)}
+                    </div>
+                  ))}
+                </div>
 
-        <p className="mt-4 text-xs text-white/40">
-          Tip: sleep een shift naar een andere medewerker of dag. Klik in een lege cel om een shift toe te voegen.
-        </p>
+                {/* Rijen */}
+                {loading ? (
+                  <p className="mt-6 text-center text-white/40">Laden…</p>
+                ) : (
+                  rows.map((row) => (
+                    <div key={row.id ?? 'open'} className="mt-px grid gap-px" style={{ gridTemplateColumns: `180px repeat(${days.length}, minmax(0,1fr))` }}>
+                      <div className="glass flex items-center justify-between rounded-lg p-2">
+                        <div className="flex items-center gap-2">
+                          {row.color && <span className="h-2.5 w-2.5 rounded-full" style={{ background: row.color }} />}
+                          <span className={`text-sm ${row.id ? 'text-white/85' : 'text-amber-300'}`}>{row.label}</span>
+                        </div>
+                        {row.hours !== undefined && (
+                          <span className="text-xs text-white/40">{row.hours.toFixed(0)}u</span>
+                        )}
+                      </div>
+
+                      {days.map((day) => {
+                        const cellShifts = shiftsFor(row.id, day);
+                        return (
+                          <div
+                            key={day.toISOString()}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              const id = e.dataTransfer.getData('text/shiftId');
+                              if (id) handleDrop(row.id, day, id);
+                            }}
+                            onClick={() => cellShifts.length === 0 && openNew(row.id, day)}
+                            className="glass min-h-[64px] rounded-lg p-1.5 transition hover:border-sky-400/30"
+                          >
+                            <div className="space-y-1">
+                              {cellShifts.map((s) => (
+                                <button
+                                  key={s.id}
+                                  draggable
+                                  onDragStart={(e) => e.dataTransfer.setData('text/shiftId', s.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDraft(draftFromShift(s));
+                                  }}
+                                  className="w-full cursor-grab rounded-lg border-l-4 bg-white/10 px-2 py-1 text-left text-xs transition hover:bg-white/20 active:cursor-grabbing"
+                                  style={{ borderLeftColor: s.color ?? s.department?.color ?? '#38BDF8' }}
+                                >
+                                  <div className="font-medium text-white">
+                                    {timeLabel(s.startsAt)}–{timeLabel(s.endsAt)}
+                                  </div>
+                                  <div className="truncate text-white/60">
+                                    {s.department?.name ?? s.title ?? 'Shift'}
+                                    {!s.isPublished && <span className="ml-1 text-amber-300/80">•concept</span>}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <p className="mt-4 text-xs text-white/40">
+              Tip: sleep een shift naar een andere medewerker of dag. Klik in een lege cel om een shift toe te voegen.
+            </p>
+          </>
+        )}
       </div>
 
       {draft && (
