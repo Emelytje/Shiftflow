@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { apiFetch } from '@/lib/api';
@@ -65,8 +66,9 @@ export default function DashboardPage() {
       <header className="glass sticky top-0 z-10 mx-4 mt-4 flex items-center justify-between rounded-2xl px-6 py-3">
         <Logo className="text-lg" />
         <div className="flex items-center gap-4">
+          <Link href="/planner" className="btn-primary px-4 py-1.5 text-sm">Open planner</Link>
           {me && (
-            <span className="text-sm text-white/70">
+            <span className="hidden text-sm text-white/70 sm:inline">
               {me.firstName} {me.lastName} · <span className="text-sky-400">{me.role}</span>
             </span>
           )}
