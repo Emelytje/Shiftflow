@@ -17,6 +17,7 @@ import { LocationsModule } from './locations/locations.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AvailabilityModule } from './availability/availability.module';
 import { DocumentsModule } from './documents/documents.module';
+import { ChatModule } from './chat/chat.module';
 import { AuditModule } from './audit/audit.module';
 import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -41,6 +42,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     NotificationsModule,
     AvailabilityModule,
     DocumentsModule,
+    ChatModule,
     AuditModule,
     HealthModule,
   ],

@@ -14,6 +14,7 @@ const nav = [
   { href: '/beschikbaarheid', label: 'Beschikbaarheid', icon: '✅' },
   { href: '/uren', label: 'Uren', icon: '⏱️' },
   { href: '/meldingen', label: 'Meldingen', icon: '🔔' },
+  { href: '/chat', label: 'Chat', icon: '💬' },
   { href: '/documenten', label: 'Documenten', icon: '📁' },
   { href: '/rapporten', label: 'Rapporten', icon: '📈' },
   { href: '/beheer', label: 'Beheer', icon: '⚙️' },
