@@ -11,6 +11,7 @@ const nav = [
   { href: '/verlof', label: 'Verlof', icon: '🌴' },
   { href: '/uren', label: 'Uren', icon: '⏱️' },
   { href: '/rapporten', label: 'Rapporten', icon: '📈' },
+  { href: '/beheer', label: 'Beheer', icon: '⚙️' },
   { href: '/account', label: 'Account', icon: '🔒' },
 ];
 

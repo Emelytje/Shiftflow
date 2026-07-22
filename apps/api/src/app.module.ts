@@ -12,6 +12,8 @@ import { TimeTrackingModule } from './time-tracking/time-tracking.module';
 import { AiModule } from './ai/ai.module';
 import { GdprModule } from './gdpr/gdpr.module';
 import { ReportingModule } from './reporting/reporting.module';
+import { DepartmentsModule } from './departments/departments.module';
+import { LocationsModule } from './locations/locations.module';
 import { AuditModule } from './audit/audit.module';
 import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -31,6 +33,8 @@ import { RolesGuard } from './common/guards/roles.guard';
     AiModule,
     GdprModule,
     ReportingModule,
+    DepartmentsModule,
+    LocationsModule,
     AuditModule,
     HealthModule,
   ],
