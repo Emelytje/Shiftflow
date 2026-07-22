@@ -1,0 +1,30 @@
+{
+  "name": "shiftflow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ShiftFlow — Slim personeelsbeheer, zonder zorgen. Modern platform voor personeelsplanning en werkroosters.",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:api dev:web",
+    "dev:api": "npm run start:dev --workspace=@shiftflow/api",
+    "dev:web": "npm run dev --workspace=@shiftflow/web",
+    "build": "npm run build --workspace=@shiftflow/api && npm run build --workspace=@shiftflow/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:migrate": "npm run prisma:migrate --workspace=@shiftflow/api",
+    "db:seed": "npm run prisma:seed --workspace=@shiftflow/api",
+    "db:studio": "npm run prisma:studio --workspace=@shiftflow/api",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

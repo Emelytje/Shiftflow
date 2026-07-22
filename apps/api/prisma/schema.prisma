@@ -1,0 +1,541 @@
+// ─────────────────────────────────────────────────────────────
+// ShiftFlow — Prisma schema (Fase 3: Database)
+// Multi-tenant model: Company → Location → Department → Team → User
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  OWNER
+  MANAGER
+  TEAM_LEAD
+  HR
+  ACCOUNTING
+  EMPLOYEE
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  TEMPORARY
+  FREELANCE
+  STUDENT
+  INTERN
+}
+
+enum ShiftStatus {
+  OPEN
+  ASSIGNED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum LeaveType {
+  VACATION
+  ADV
+  RECUPERATION
+  SICK
+  SHORT_LEAVE // klein verlet
+  UNPAID
+  PARENTAL
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum TimeEntryStatus {
+  CLOCKED_IN
+  CLOCKED_OUT
+  APPROVED
+  DISPUTED
+}
+
+enum ClockMethod {
+  WEB
+  KIOSK
+  QR
+  NFC
+  GPS
+  MANUAL
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  PUSH
+}
+
+enum DocumentType {
+  CONTRACT
+  CERTIFICATE
+  ATTESTATION
+  TRAINING
+  PAYSLIP
+  OTHER
+}
+
+// ── Tenancy ──────────────────────────────────────────────────
+
+model Company {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  logoUrl      String?
+  primaryColor String   @default("#0A2540") // donkerblauw
+  accentColor  String   @default("#38BDF8") // lichtblauw
+  vatNumber    String?
+  address      String?
+  country      String   @default("BE")
+  timezone     String   @default("Europe/Brussels")
+  locale       String   @default("nl-BE")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscription  Subscription?
+  locations     Location[]
+  departments   Department[]
+  users         User[]
+  shifts        Shift[]
+  shiftTemplates ShiftTemplate[]
+  leaveRequests LeaveRequest[]
+  documents     Document[]
+  auditLogs     AuditLog[]
+  announcements Announcement[]
+
+  @@index([slug])
+}
+
+model Subscription {
+  id        String             @id @default(uuid())
+  companyId String             @unique
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan      SubscriptionPlan   @default(FREE)
+  status    SubscriptionStatus @default(TRIALING)
+  seats     Int                @default(10)
+  trialEndsAt DateTime?
+  renewsAt  DateTime?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+
+model Location {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name        String
+  address     String?
+  timezone    String   @default("Europe/Brussels")
+  latitude    Float?
+  longitude   Float?
+  geofenceRadiusM Int? // meters, voor GPS-klokken
+  openingHours Json?   // { mon: [{from,to}], ... }
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  departments Department[]
+  shifts      Shift[]
+  memberships Membership[]
+
+  @@index([companyId])
+}
+
+model Department {
+  id         String   @id @default(uuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  name       String   // bv. Keuken, Bar, Bediening, Magazijn
+  color      String   @default("#38BDF8")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  teams  Team[]
+  shifts Shift[]
+  memberships Membership[]
+
+  @@index([companyId])
+  @@index([locationId])
+}
+
+model Team {
+  id           String   @id @default(uuid())
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships Membership[]
+
+  @@index([departmentId])
+}
+
+// ── Accounts & People ────────────────────────────────────────
+
+model User {
+  id            String   @id @default(uuid())
+  companyId     String?
+  company       Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  email         String   @unique
+  passwordHash  String?
+  firstName     String
+  lastName      String
+  phone         String?
+  avatarUrl     String?
+  role          Role     @default(EMPLOYEE)
+  color         String   @default("#0EA5E9") // kleur in planner
+  employmentType EmploymentType?
+  contractHoursPerWeek Float?
+  hourlyCost    Float?   // interne kost voor kostenberekening
+  hireDate      DateTime?
+  isActive      Boolean  @default(true)
+
+  // Beveiliging
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
+  lastLoginAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships     Membership[]
+  qualifications  UserQualification[]
+  availabilities  Availability[]
+  shifts          Shift[]           @relation("ShiftAssignee")
+  leaveRequests   LeaveRequest[]    @relation("LeaveEmployee")
+  leaveDecisions  LeaveRequest[]    @relation("LeaveDecider")
+  leaveBalances   LeaveBalance[]
+  timeEntries     TimeEntry[]
+  documents       Document[]
+  notifications   Notification[]
+  messagesSent    Message[]
+  auditLogs       AuditLog[]
+  refreshTokens   RefreshToken[]
+  oauthAccounts   OAuthAccount[]
+
+  @@index([companyId])
+  @@index([email])
+}
+
+model Membership {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  teamId       String?
+  team         Team?    @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  isPrimary    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, locationId, departmentId, teamId])
+  @@index([userId])
+}
+
+model Qualification {
+  id        String   @id @default(uuid())
+  name      String   // bv. Barista, EHBO, Heftruck, Verpleegkundige
+  createdAt DateTime @default(now())
+
+  users UserQualification[]
+}
+
+model UserQualification {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  qualificationId String
+  qualification   Qualification @relation(fields: [qualificationId], references: [id], onDelete: Cascade)
+  expiresAt       DateTime?
+
+  @@unique([userId, qualificationId])
+}
+
+model OAuthAccount {
+  id         String @id @default(uuid())
+  userId     String
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider   String // google | microsoft | apple
+  providerId String
+  createdAt  DateTime @default(now())
+
+  @@unique([provider, providerId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ── Availability ─────────────────────────────────────────────
+
+model Availability {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Terugkerend (weekdag) OF specifieke datum
+  weekday   Int?     // 0=zo .. 6=za
+  date      DateTime?
+  startTime String   // "09:00"
+  endTime   String   // "17:00"
+  isAvailable Boolean @default(true) // false = niet beschikbaar
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ── Scheduling ───────────────────────────────────────────────
+
+model Shift {
+  id           String   @id @default(uuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  assigneeId   String?
+  assignee     User?    @relation("ShiftAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  title       String?
+  startsAt    DateTime
+  endsAt      DateTime
+  breakMinutes Int     @default(0)
+  status      ShiftStatus @default(OPEN)
+  notes       String?
+  color       String?
+  isPublished Boolean  @default(false)
+  createdByAi Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  timeEntries TimeEntry[]
+
+  @@index([companyId, startsAt])
+  @@index([assigneeId, startsAt])
+  @@index([locationId])
+  @@index([departmentId])
+}
+
+model ShiftTemplate {
+  id           String   @id @default(uuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name         String
+  // Definitie van terugkerende shifts als JSON:
+  // [{ weekday, startTime, endTime, departmentId, count }]
+  definition   Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+// ── Leave ────────────────────────────────────────────────────
+
+model LeaveRequest {
+  id         String   @id @default(uuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId String
+  employee   User     @relation("LeaveEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  type       LeaveType
+  status     LeaveStatus @default(PENDING)
+  startsAt   DateTime
+  endsAt     DateTime
+  hours      Float?   // berekende uren
+  reason     String?
+  decidedById String?
+  decidedBy  User?    @relation("LeaveDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([employeeId])
+}
+
+model LeaveBalance {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      LeaveType
+  year      Int
+  totalHours Float   @default(0)
+  usedHours  Float   @default(0)
+
+  @@unique([userId, type, year])
+  @@index([userId])
+}
+
+// ── Time tracking ────────────────────────────────────────────
+
+model TimeEntry {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shiftId    String?
+  shift      Shift?   @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  clockIn    DateTime
+  clockOut   DateTime?
+  breakMinutes Int    @default(0)
+  method     ClockMethod @default(WEB)
+  status     TimeEntryStatus @default(CLOCKED_IN)
+  latitude   Float?
+  longitude  Float?
+  // Afgeleide velden (berekend bij uitklokken)
+  workedMinutes   Int?
+  overtimeMinutes Int?
+  nightMinutes    Int?
+  weekendMinutes  Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, clockIn])
+  @@index([shiftId])
+}
+
+// ── Communication ────────────────────────────────────────────
+
+model Conversation {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String?  // null = 1-op-1
+  isGroup   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  messages     Message[]
+  participants ConversationParticipant[]
+
+  @@index([companyId])
+}
+
+model ConversationParticipant {
+  id             String @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  lastReadAt     DateTime?
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  attachmentUrl  String?
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   NotificationChannel @default(IN_APP)
+  title     String
+  body      String
+  linkUrl   String?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, readAt])
+}
+
+// ── Documents ────────────────────────────────────────────────
+
+model Document {
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId    String?  // eigenaar/betrokken werknemer
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      DocumentType @default(OTHER)
+  name      String
+  storageKey String  // S3 key
+  mimeType  String?
+  sizeBytes Int?
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+  @@index([userId])
+}
+
+// ── Audit ────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   // bv. "shift.create"
+  entity    String   // bv. "Shift"
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([userId])
+}
