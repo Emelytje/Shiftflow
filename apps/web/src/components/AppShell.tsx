@@ -8,6 +8,8 @@ import { clearTokens } from '@/lib/auth';
 const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
   { href: '/planner', label: 'Planner', icon: '🗓️' },
+  { href: '/verlof', label: 'Verlof', icon: '🌴' },
+  { href: '/uren', label: 'Uren', icon: '⏱️' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

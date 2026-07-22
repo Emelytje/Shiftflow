@@ -9,9 +9,14 @@ verdergaan.
 | 2 | Functioneel ontwerp | ✅ | `docs/02-functioneel-ontwerp.md` — modules, user stories, flows, rechten-matrix |
 | 3 | Database | ✅ | `prisma/schema.prisma`, `docs/03-database-erd.md` — volledig datamodel + ERD |
 | — | **Fundering (scaffold)** | ✅ | Werkende monorepo: NestJS API (auth/RBAC), Next.js UI (huisstijl), Docker, seed |
-| 4 | UI/UX | ⏳ | Wireframes → high-fidelity, componentbibliotheek, planner-ontwerp |
-| 5 | Backend | ⏳ | Modules: scheduling, leave, time-tracking, documents, reporting, notifications |
-| 6 | Frontend | ⏳ | Planner (drag&drop, dag/week/maand), portalen per rol, admin CMS |
+| 5a | Backend — Scheduling | ✅ | Shifts CRUD, conflictdetectie, week dupliceren, publiceren |
+| 5b | Backend — Verlof | ✅ | Aanvraag → goedkeuring, saldi-afboeking, RBAC |
+| 5c | Backend — Uren | ✅ | Klokken in/uit, over-/nacht-/weekenduren (unit-getest), goedkeuring |
+| 6a | Frontend — Planner | ✅ | Weekplanner met drag & drop, filters, dupliceren, publiceren |
+| 6b | Frontend — Verlof & Uren | ✅ | Verlofpagina + klok-widget + registratie-overzicht |
+| 4 | UI/UX (verfijning) | ⏳ | Wireframes → high-fidelity, componentbibliotheek, dag/maand-weergave |
+| 5 | Backend (rest) | ⏳ | Documents, reporting, notifications, chat |
+| 6 | Frontend (rest) | ⏳ | Portalen per rol, admin CMS, rapporten-UI |
 | 7 | AI | ⏳ | Auto-planning, voorspellingen, aanbevelingen, AI-chat voor planners |
 | 8 | Testen | ⏳ | Unit-, integratie- en e2e-tests; testplan |
 | 9 | Beveiliging | ⏳ | 2FA, encryptie, audit-interceptor, GDPR-tooling, securityplan |
