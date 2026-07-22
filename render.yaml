@@ -42,10 +42,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # De web-service proxyt /api automatisch naar de API-service hierboven
-      # (same-origin → geen CORS). Render vult dit automatisch in.
+      # Zet dit op de URL van shiftflow-api (bv. https://shiftflow-api.onrender.com).
+      # De web-service proxyt /api dan naar de API (same-origin → geen CORS).
       - key: API_INTERNAL_URL
-        fromService:
-          type: web
-          name: shiftflow-api
-          property: host
+        sync: false

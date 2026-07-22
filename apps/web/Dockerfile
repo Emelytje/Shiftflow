@@ -4,6 +4,10 @@ WORKDIR /app
 # In productie: "" zodat de frontend same-origin /api aanroept (via de proxy).
 ARG NEXT_PUBLIC_API_URL=""
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# API_INTERNAL_URL wordt bij de build ingelezen voor de /api-proxy (rewrites).
+# Render geeft de env var met dezelfde naam automatisch door aan de build.
+ARG API_INTERNAL_URL=""
+ENV API_INTERNAL_URL=$API_INTERNAL_URL
 COPY apps/web/package.json ./
 RUN npm install
 COPY apps/web ./
