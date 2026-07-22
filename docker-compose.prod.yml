@@ -66,9 +66,9 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-      UPLOAD_DIR: /app/apps/api/uploads
+      UPLOAD_DIR: /app/uploads
     volumes:
-      - uploads_data:/app/apps/api/uploads
+      - uploads_data:/app/uploads
     # Voer database-migraties uit vóór het starten van de API.
     command: sh -c "npx prisma migrate deploy && node dist/main.js"
 
