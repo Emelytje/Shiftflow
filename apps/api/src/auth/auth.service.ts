@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from './jwt.strategy';
+import { TwoFactorService } from './two-factor.service';
 
 function slugify(input: string): string {
   return input
@@ -27,6 +28,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
+    private readonly twoFactor: TwoFactorService,
   ) {}
 
   /** Registreert een nieuw bedrijf + eigenaar-account. */
@@ -82,6 +84,20 @@ export class AuthService {
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid || !user.isActive) {
       throw new UnauthorizedException('Ongeldige inloggegevens');
+    }
+
+    // Tweestapsverificatie (indien ingeschakeld).
+    if (user.twoFactorEnabled) {
+      if (!dto.code) {
+        throw new UnauthorizedException({
+          message: '2FA-code vereist',
+          twoFactorRequired: true,
+        });
+      }
+      const ok = await this.twoFactor.verifyCode(user.id, dto.code);
+      if (!ok) {
+        throw new UnauthorizedException('Ongeldige 2FA-code');
+      }
     }
 
     await this.prisma.user.update({
@@ -140,6 +156,7 @@ export class AuthService {
         avatarUrl: true,
         color: true,
         companyId: true,
+        twoFactorEnabled: true,
         company: { select: { id: true, name: true, slug: true, logoUrl: true } },
       },
     });

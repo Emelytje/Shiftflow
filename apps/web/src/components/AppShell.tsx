@@ -10,6 +10,7 @@ const nav = [
   { href: '/planner', label: 'Planner', icon: '🗓️' },
   { href: '/verlof', label: 'Verlof', icon: '🌴' },
   { href: '/uren', label: 'Uren', icon: '⏱️' },
+  { href: '/account', label: 'Account', icon: '🔒' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

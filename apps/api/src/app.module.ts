@@ -10,6 +10,8 @@ import { SchedulingModule } from './scheduling/scheduling.module';
 import { LeaveModule } from './leave/leave.module';
 import { TimeTrackingModule } from './time-tracking/time-tracking.module';
 import { AiModule } from './ai/ai.module';
+import { GdprModule } from './gdpr/gdpr.module';
+import { AuditModule } from './audit/audit.module';
 import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -26,6 +28,8 @@ import { RolesGuard } from './common/guards/roles.guard';
     LeaveModule,
     TimeTrackingModule,
     AiModule,
+    GdprModule,
+    AuditModule,
     HealthModule,
   ],
   providers: [

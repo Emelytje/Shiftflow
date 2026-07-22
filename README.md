@@ -86,11 +86,18 @@ Alle accounts gebruiken wachtwoord **`Demo1234!`**.
 - [Architectuur](docs/architecture.md)
 - [Roadmap & fases](docs/roadmap.md)
 
-## 🔐 Beveiliging (fundering)
+## 🔐 Beveiliging & GDPR
 
-JWT access + roterende refresh tokens · bcrypt-hashing · Helmet ·
-rate limiting · rollen-guards (RBAC) · tenant-isolatie · audit-logmodel.
-Volledig securityplan en GDPR-documentatie volgen in latere fases.
+JWT access + roterende refresh tokens · bcrypt-hashing · **2FA (TOTP)** met
+secret **versleuteld at rest (AES-256-GCM)** · Helmet · rate limiting
+(streng op login) · rollen-guards (RBAC) · tenant-isolatie · **audit-logging**
+op elke mutatie.
+
+**GDPR** ingebouwd (Account → Privacy): data-export (art. 15/20) en
+anonimisering / recht op vergetelheid (art. 17). Zie
+[`docs/gdpr.md`](docs/gdpr.md), [`docs/securityplan.md`](docs/securityplan.md)
+en de juridische sjablonen in [`docs/legal/`](docs/legal/) (privacyverklaring,
+DPA, verwerkingsregister, algemene voorwaarden).
 
 ## 📄 Licentie
 
