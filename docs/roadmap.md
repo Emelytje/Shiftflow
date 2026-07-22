@@ -21,6 +21,7 @@ verdergaan.
 | — | Notificaties & aankondigingen | ✅ | In-app meldingen bij shift-toewijzing en verlofbeslissing, bedrijfsaankondigingen, ongelezen-badge |
 | — | Beschikbaarheid (portaal) | ✅ | Werknemers geven (on)beschikbaarheid per weekdag door; AI-planner houdt er rekening mee |
 | — | Loonexport (boekhouding) | ✅ | Payroll-CSV per medewerker: gewerkte, over-, nacht- en weekenduren + kosten |
+| — | Documenten | ✅ | Contracten/attesten/certificaten uploaden & downloaden met vervaldatum-waarschuwing |
 | 4 | UI/UX (verfijning) | ⏳ | Wireframes → high-fidelity, componentbibliotheek, dag/maand-weergave |
 | 5 | Backend (rest) | ⏳ | Documents, reporting, notifications, chat |
 | 6 | Frontend (rest) | ⏳ | Portalen per rol, admin CMS, rapporten-UI |

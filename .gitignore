@@ -26,6 +26,10 @@ yarn-error.log*
 # Prisma
 apps/api/prisma/migrations/dev.db*
 
+# Uploads (documenten — lokale opslag, in productie S3)
+uploads/
+apps/api/uploads/
+
 # OS / editor
 .DS_Store
 Thumbs.db
