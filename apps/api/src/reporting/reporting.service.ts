@@ -87,4 +87,76 @@ export class ReportingService {
 
     return { from, to, rows, totals };
   }
+
+  /**
+   * Loonexport: per medewerker de werkelijk geklokte uren (uit afgesloten/
+   * goedgekeurde urenregistraties) opgesplitst in gewone, over-, nacht- en
+   * weekenduren — klaar voor doorgifte aan een payroll-/boekhoudpakket.
+   */
+  async payroll(
+    companyId: string | null,
+    from: string,
+    to: string,
+  ): Promise<PayrollReport> {
+    if (!companyId) throw new ForbiddenException('Geen bedrijf gekoppeld');
+    const entries = await this.prisma.timeEntry.findMany({
+      where: {
+        user: { companyId },
+        status: { in: ['CLOCKED_OUT', 'APPROVED'] },
+        clockIn: { gte: new Date(from), lte: new Date(to) },
+      },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, hourlyCost: true } },
+      },
+    });
+
+    const map = new Map<string, PayrollRow>();
+    for (const e of entries) {
+      if (!e.user) continue;
+      const key = e.user.id;
+      const row = map.get(key) ?? {
+        employeeId: key,
+        employee: `${e.user.firstName} ${e.user.lastName}`,
+        workedHours: 0,
+        overtimeHours: 0,
+        nightHours: 0,
+        weekendHours: 0,
+        cost: 0,
+      };
+      row.workedHours += (e.workedMinutes ?? 0) / 60;
+      row.overtimeHours += (e.overtimeMinutes ?? 0) / 60;
+      row.nightHours += (e.nightMinutes ?? 0) / 60;
+      row.weekendHours += (e.weekendMinutes ?? 0) / 60;
+      row.cost += ((e.workedMinutes ?? 0) / 60) * (e.user.hourlyCost ?? 0);
+      map.set(key, row);
+    }
+
+    const round = (n: number) => Math.round(n * 100) / 100;
+    const rows = [...map.values()].map((r) => ({
+      ...r,
+      workedHours: round(r.workedHours),
+      overtimeHours: round(r.overtimeHours),
+      nightHours: round(r.nightHours),
+      weekendHours: round(r.weekendHours),
+      cost: round(r.cost),
+    }));
+
+    return { from, to, rows };
+  }
+}
+
+export interface PayrollRow {
+  employeeId: string;
+  employee: string;
+  workedHours: number;
+  overtimeHours: number;
+  nightHours: number;
+  weekendHours: number;
+  cost: number;
+}
+
+export interface PayrollReport {
+  from: string;
+  to: string;
+  rows: PayrollRow[];
 }

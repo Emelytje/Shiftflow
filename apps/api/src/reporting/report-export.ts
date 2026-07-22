@@ -1,6 +1,6 @@
 import * as ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
-import { HoursCostReport } from './reporting.service';
+import { HoursCostReport, PayrollReport } from './reporting.service';
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
@@ -16,6 +16,19 @@ export function toCsv(report: HoursCostReport): string {
   }
   lines.push(`TOTAAL;${report.totals.shifts};${report.totals.hours.toFixed(2)};${report.totals.cost.toFixed(2)}`);
   return '﻿' + lines.join('\n'); // BOM voor juiste tekens in Excel
+}
+
+/** Loonexport als CSV (per medewerker, uren opgesplitst). */
+export function payrollToCsv(report: PayrollReport): string {
+  const lines: string[] = [];
+  lines.push('Medewerker;Gewerkte uren;Overuren;Nachturen;Weekenduren;Kosten (EUR)');
+  for (const r of report.rows) {
+    lines.push(
+      `${r.employee};${r.workedHours.toFixed(2)};${r.overtimeHours.toFixed(2)};` +
+        `${r.nightHours.toFixed(2)};${r.weekendHours.toFixed(2)};${r.cost.toFixed(2)}`,
+    );
+  }
+  return '﻿' + lines.join('\n');
 }
 
 /** Excel-werkboek (.xlsx). */

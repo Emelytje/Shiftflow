@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/AppShell';
 import { getToken } from '@/lib/auth';
-import { HoursCostReport, fetchHoursCost, downloadReport } from '@/lib/reports';
+import { HoursCostReport, fetchHoursCost, downloadReport, downloadPayroll } from '@/lib/reports';
 
 function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -88,6 +88,17 @@ export default function ReportsPage() {
           <button onClick={() => onDownload('csv')} className="btn-ghost px-3 py-1.5 text-sm">📄 CSV</button>
           <button onClick={() => onDownload('xlsx')} className="btn-ghost px-3 py-1.5 text-sm">📊 Excel</button>
           <button onClick={() => onDownload('pdf')} className="btn-ghost px-3 py-1.5 text-sm">📕 PDF</button>
+          <span className="mx-1 text-white/20">|</span>
+          <button
+            onClick={() =>
+              downloadPayroll(new Date(from).toISOString(), new Date(to + 'T23:59:59').toISOString()).catch((e) =>
+                setError(e instanceof Error ? e.message : 'Loonexport mislukt'),
+              )
+            }
+            className="rounded-xl border border-emerald-400/30 px-3 py-1.5 text-sm text-emerald-300 transition hover:bg-emerald-500/10"
+          >
+            💶 Loonexport (payroll CSV)
+          </button>
         </div>
 
         {/* Samenvatting */}

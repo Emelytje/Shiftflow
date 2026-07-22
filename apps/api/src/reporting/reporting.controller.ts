@@ -3,7 +3,7 @@ import { Response } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { ReportingService } from './reporting.service';
-import { toCsv, toXlsx, toPdf } from './report-export';
+import { toCsv, toXlsx, toPdf, payrollToCsv } from './report-export';
 import { CurrentUser, AuthUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 
@@ -57,5 +57,29 @@ export class ReportingController {
       return res.send(buf);
     }
     throw new BadRequestException('Ongeldig formaat (gebruik csv, xlsx of pdf)');
+  }
+
+  @Get('payroll')
+  payroll(
+    @CurrentUser() user: AuthUser,
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    if (!from || !to) throw new BadRequestException('from en to zijn verplicht');
+    return this.reporting.payroll(user.companyId, from, to);
+  }
+
+  @Get('payroll/export')
+  async payrollExport(
+    @CurrentUser() user: AuthUser,
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Res() res: Response,
+  ) {
+    if (!from || !to) throw new BadRequestException('from en to zijn verplicht');
+    const report = await this.reporting.payroll(user.companyId, from, to);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="shiftflow-loonexport.csv"');
+    return res.send(payrollToCsv(report));
   }
 }
