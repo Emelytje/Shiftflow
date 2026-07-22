@@ -10,6 +10,7 @@ const nav = [
   { href: '/planner', label: 'Planner', icon: '🗓️' },
   { href: '/verlof', label: 'Verlof', icon: '🌴' },
   { href: '/uren', label: 'Uren', icon: '⏱️' },
+  { href: '/rapporten', label: 'Rapporten', icon: '📈' },
   { href: '/account', label: 'Account', icon: '🔒' },
 ];
 

@@ -16,6 +16,7 @@ verdergaan.
 | 6b | Frontend — Verlof & Uren | ✅ | Verlofpagina + klok-widget + registratie-overzicht |
 | 7 | AI — Auto-planning | ✅ | Regelgebaseerde motor vult open shifts (beschikbaarheid, overuren, kosten), knop in planner |
 | 9 | Beveiliging & GDPR | ✅ | 2FA (TOTP, secret versleuteld), auth rate limiting, audit-interceptor, GDPR-export & anonimisering, juridische sjablonen |
+| — | Rapporten & export | ✅ | Uren & kosten per medewerker, export naar CSV, Excel (.xlsx) en PDF |
 | 4 | UI/UX (verfijning) | ⏳ | Wireframes → high-fidelity, componentbibliotheek, dag/maand-weergave |
 | 5 | Backend (rest) | ⏳ | Documents, reporting, notifications, chat |
 | 6 | Frontend (rest) | ⏳ | Portalen per rol, admin CMS, rapporten-UI |
