@@ -1,0 +1,52 @@
+# ─────────────────────────────────────────────────────────────
+# ShiftFlow — Render Blueprint
+# Maakt in één keer de API- en web-service aan (Docker).
+# Database: gebruik Neon (gratis PostgreSQL) en plak de URL bij DATABASE_URL.
+# Redis is NIET nodig (wordt niet gebruikt in de code).
+#
+# Gebruik: Render → New → Blueprint → kies je repo. Vul daarna enkel
+# DATABASE_URL in bij de API-service. De rest is automatisch.
+# ─────────────────────────────────────────────────────────────
+
+services:
+  # ── API (NestJS) ──
+  - type: web
+    name: shiftflow-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    # Migraties draaien automatisch bij elke deploy, daarna start de API.
+    dockerCommand: sh -c "npx prisma migrate deploy && node dist/main.js"
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Neon-connectiestring (plak deze zelf in Render):
+      - key: DATABASE_URL
+        sync: false
+      # Sterke secrets worden automatisch gegenereerd door Render:
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+
+  # ── Web (Next.js) ──
+  - type: web
+    name: shiftflow-web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./apps/web/Dockerfile
+    dockerContext: .
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # De web-service proxyt /api automatisch naar de API-service hierboven
+      # (same-origin → geen CORS). Render vult dit automatisch in.
+      - key: API_INTERNAL_URL
+        fromService:
+          type: web
+          name: shiftflow-api
+          property: host

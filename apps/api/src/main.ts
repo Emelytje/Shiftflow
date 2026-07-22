@@ -34,7 +34,8 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
-  const port = Number(process.env.API_PORT ?? 4000);
+  // Render (en veel PaaS) geven de poort via PORT; lokaal gebruiken we API_PORT.
+  const port = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
   await app.listen(port, '0.0.0.0');
   // eslint-disable-next-line no-console
   console.log(`🚀 ShiftFlow API draait op http://localhost:${port}/api`);
