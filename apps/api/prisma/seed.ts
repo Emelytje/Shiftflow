@@ -63,7 +63,7 @@ function computeWorked(clockIn: Date, clockOut: Date, breakMinutes: number) {
   };
 }
 
-async function main() {
+export async function seed() {
   const passwordHash = await bcrypt.hash(PASSWORD, 12);
   const thisMonday = startOfWeek(new Date());
 
@@ -348,12 +348,15 @@ async function main() {
   );
 }
 
-main()
-  .catch((e) => {
-    // eslint-disable-next-line no-console
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+// Auto-uitvoeren wanneer direct aangeroepen (npm run db:seed).
+if (require.main === module) {
+  seed()
+    .catch((e) => {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}
