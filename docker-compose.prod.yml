@@ -69,8 +69,7 @@ services:
       UPLOAD_DIR: /app/uploads
     volumes:
       - uploads_data:/app/uploads
-    # Voer database-migraties uit vóór het starten van de API.
-    command: sh -c "npx prisma migrate deploy && node dist/main.js"
+    # Migraties + start zitten in de Dockerfile CMD.
 
   web:
     build:

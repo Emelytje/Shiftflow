@@ -16,8 +16,7 @@ services:
     plan: free
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
-    # Migraties draaien automatisch bij elke deploy, daarna start de API.
-    dockerCommand: sh -c "npx prisma migrate deploy && node dist/main.js"
+    # Migraties + start zitten in de Dockerfile CMD (betrouwbaarder op Render).
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
