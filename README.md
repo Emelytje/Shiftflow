@@ -58,11 +58,23 @@ npm run dev
 - API-docs (OpenAPI/Swagger): http://localhost:4000/api/docs
 - Health: http://localhost:4000/api/health
 
-### Alles via Docker
+### Alles via Docker (lokaal)
 
 ```bash
 docker compose up -d --build
 ```
+
+### 🚀 Online zetten (productie)
+
+Volledige stap-voor-stap gids: **[docs/DEPLOY.md](docs/DEPLOY.md)**. Kort:
+
+```bash
+cp .env.prod.example .env   # vul DOMAIN + secrets in (openssl rand -hex 32)
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Caddy regelt automatisch HTTPS, database-migraties draaien vanzelf, en de
+frontend praat same-origin met de API (geen CORS-gedoe).
 
 ## 👤 Demo-accounts
 

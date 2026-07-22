@@ -26,6 +26,7 @@ verdergaan.
 | — | Chat | ✅ | 1-op-1 en groepsgesprekken tussen collega's, met deelnemer-afscherming |
 | — | Planner dag/week/maand | ✅ | Dag-, week- en maandweergave (kalender) met weergaveschakelaar |
 | — | Abonnementen / billing | ⛔ | Bewust overgeslagen op verzoek |
+| 10 | Deployment | ✅ | Productie-compose met Caddy (auto-HTTPS), auto-migraties, stap-voor-stap gids (docs/DEPLOY.md) |
 | 4 | UI/UX (verfijning) | ⏳ | High-fidelity iteraties, componentbibliotheek |
 | 7 | AI | ⏳ | Auto-planning, voorspellingen, aanbevelingen, AI-chat voor planners |
 | 8 | Testen | ⏳ | Unit-, integratie- en e2e-tests; testplan |

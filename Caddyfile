@@ -1,0 +1,16 @@
+# ShiftFlow reverse proxy — automatische HTTPS via Let's Encrypt.
+# DOMAIN wordt uit de omgeving (.env) gehaald.
+
+{$DOMAIN} {
+	# API onder /api/* naar de API-container.
+	handle /api/* {
+		reverse_proxy api:4000
+	}
+
+	# Al het overige naar de Next.js-frontend.
+	handle {
+		reverse_proxy web:3000
+	}
+
+	encode gzip zstd
+}
