@@ -10,6 +10,17 @@ import { CreateShiftDto } from './dto/create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
 import { QueryShiftsDto } from './dto/query-shifts.dto';
 import { DuplicateWeekDto } from './dto/duplicate-week.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+
+function fmtShiftMoment(startsAt: Date): string {
+  return startsAt.toLocaleString('nl-BE', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 const shiftInclude = {
   assignee: { select: { id: true, firstName: true, lastName: true, color: true } },
@@ -25,7 +36,10 @@ export interface ShiftConflict {
 
 @Injectable()
 export class SchedulingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   private assertCompany(companyId: string | null): asserts companyId is string {
     if (!companyId) {
@@ -117,7 +131,7 @@ export class SchedulingService {
       });
     }
 
-    return this.prisma.shift.create({
+    const shift = await this.prisma.shift.create({
       data: {
         companyId,
         title: dto.title,
@@ -133,6 +147,15 @@ export class SchedulingService {
       },
       include: shiftInclude,
     });
+    if (shift.assigneeId) {
+      await this.notifications.notify(
+        shift.assigneeId,
+        'Nieuwe shift ingepland',
+        `Je bent ingepland op ${fmtShiftMoment(shift.startsAt)}.`,
+        '/planner',
+      );
+    }
+    return shift;
   }
 
   async update(companyId: string | null, id: string, dto: UpdateShiftDto, force = false) {
@@ -169,7 +192,7 @@ export class SchedulingService {
       }
     }
 
-    return this.prisma.shift.update({
+    const updated = await this.prisma.shift.update({
       where: { id },
       data: {
         title: dto.title,
@@ -186,6 +209,16 @@ export class SchedulingService {
       },
       include: shiftInclude,
     });
+    // Melding wanneer de shift aan een (andere) medewerker wordt toegewezen.
+    if (assigneeId && assigneeId !== existing.assigneeId) {
+      await this.notifications.notify(
+        assigneeId,
+        'Shift toegewezen',
+        `Je bent ingepland op ${fmtShiftMoment(updated.startsAt)}.`,
+        '/planner',
+      );
+    }
+    return updated;
   }
 
   async remove(companyId: string | null, id: string) {

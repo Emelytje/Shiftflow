@@ -18,6 +18,7 @@ verdergaan.
 | 9 | Beveiliging & GDPR | ✅ | 2FA (TOTP, secret versleuteld), auth rate limiting, audit-interceptor, GDPR-export & anonimisering, juridische sjablonen |
 | — | Rapporten & export | ✅ | Uren & kosten per medewerker, export naar CSV, Excel (.xlsx) en PDF |
 | — | Admin-CMS / beheer | ✅ | Medewerkers (aanmaken met tijdelijk wachtwoord, activeren), afdelingen, vestigingen en branding zelf beheren |
+| — | Notificaties & aankondigingen | ✅ | In-app meldingen bij shift-toewijzing en verlofbeslissing, bedrijfsaankondigingen, ongelezen-badge |
 | 4 | UI/UX (verfijning) | ⏳ | Wireframes → high-fidelity, componentbibliotheek, dag/maand-weergave |
 | 5 | Backend (rest) | ⏳ | Documents, reporting, notifications, chat |
 | 6 | Frontend (rest) | ⏳ | Portalen per rol, admin CMS, rapporten-UI |

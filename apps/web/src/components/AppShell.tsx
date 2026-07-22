@@ -1,15 +1,18 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from './Logo';
-import { clearTokens } from '@/lib/auth';
+import { clearTokens, getToken } from '@/lib/auth';
+import { fetchUnreadCount } from '@/lib/notifications';
 
 const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
   { href: '/planner', label: 'Planner', icon: '🗓️' },
   { href: '/verlof', label: 'Verlof', icon: '🌴' },
   { href: '/uren', label: 'Uren', icon: '⏱️' },
+  { href: '/meldingen', label: 'Meldingen', icon: '🔔' },
   { href: '/rapporten', label: 'Rapporten', icon: '📈' },
   { href: '/beheer', label: 'Beheer', icon: '⚙️' },
   { href: '/account', label: 'Account', icon: '🔒' },
@@ -18,6 +21,22 @@ const nav = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!getToken()) return;
+    let active = true;
+    const poll = () =>
+      fetchUnreadCount()
+        .then((r) => active && setUnread(r.count))
+        .catch(() => undefined);
+    poll();
+    const id = setInterval(poll, 30_000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [pathname]);
 
   function logout() {
     clearTokens();
@@ -42,7 +61,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 }`}
               >
                 <span>{item.icon}</span>
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.href === '/meldingen' && unread > 0 && (
+                  <span className="rounded-full bg-sky-500 px-1.5 py-0.5 text-xs font-semibold text-navy-900">
+                    {unread}
+                  </span>
+                )}
               </Link>
             );
           })}

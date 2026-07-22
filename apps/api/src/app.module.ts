@@ -14,6 +14,7 @@ import { GdprModule } from './gdpr/gdpr.module';
 import { ReportingModule } from './reporting/reporting.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { LocationsModule } from './locations/locations.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { AuditModule } from './audit/audit.module';
 import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -35,6 +36,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     ReportingModule,
     DepartmentsModule,
     LocationsModule,
+    NotificationsModule,
     AuditModule,
     HealthModule,
   ],

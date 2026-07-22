@@ -8,6 +8,7 @@ import { LeaveStatus, LeaveType, Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthUser } from '../common/decorators/current-user.decorator';
 import { CreateLeaveDto } from './dto/create-leave.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 // Rollen die verlof mogen goedkeuren.
 const APPROVER_ROLES: Role[] = [Role.OWNER, Role.MANAGER, Role.TEAM_LEAD, Role.HR];
@@ -34,7 +35,10 @@ function estimateHours(start: Date, end: Date): number {
 
 @Injectable()
 export class LeaveService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   private assertCompany(companyId: string | null): asserts companyId is string {
     if (!companyId) throw new ForbiddenException('Geen bedrijf gekoppeld aan account');
@@ -104,11 +108,18 @@ export class LeaveService {
       );
     }
 
-    return this.prisma.leaveRequest.update({
+    const decided = await this.prisma.leaveRequest.update({
       where: { id },
       data: { status, decidedById: user.userId, decidedAt: new Date() },
       include: leaveInclude,
     });
+    await this.notifications.notify(
+      decided.employeeId,
+      status === LeaveStatus.APPROVED ? 'Verlof goedgekeurd ✓' : 'Verlof afgewezen',
+      `Je verlofaanvraag is ${status === LeaveStatus.APPROVED ? 'goedgekeurd' : 'afgewezen'}.`,
+      '/verlof',
+    );
+    return decided;
   }
 
   async cancel(user: AuthUser, id: string) {
