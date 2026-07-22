@@ -48,7 +48,7 @@ export class AiService {
     const weekStart = new Date(weekStartIso);
     const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    const [openShifts, assignedShifts, employees] = await Promise.all([
+    const [openShifts, assignedShifts, employees, unavailabilities] = await Promise.all([
       this.prisma.shift.findMany({
         where: { companyId, status: ShiftStatus.OPEN, startsAt: { gte: weekStart, lt: weekEnd } },
         orderBy: { startsAt: 'asc' },
@@ -72,7 +72,39 @@ export class AiService {
           contractHoursPerWeek: true,
         },
       }),
+      // Terugkerende "niet-beschikbaar"-blokken per weekdag.
+      this.prisma.availability.findMany({
+        where: {
+          isAvailable: false,
+          user: { companyId, role: Role.EMPLOYEE },
+          weekday: { not: null },
+        },
+        select: { userId: true, weekday: true, startTime: true, endTime: true },
+      }),
     ]);
+
+    // Index onbeschikbaarheid per medewerker per weekdag.
+    const unavailByUser = new Map<string, Array<{ weekday: number; start: string; end: string }>>();
+    for (const u of unavailabilities) {
+      if (u.weekday === null) continue;
+      const list = unavailByUser.get(u.userId) ?? [];
+      list.push({ weekday: u.weekday, start: u.startTime, end: u.endTime });
+      unavailByUser.set(u.userId, list);
+    }
+    const toMinutes = (t: string) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+    const isUnavailable = (userId: string, s: Date, e: Date): boolean => {
+      const blocks = unavailByUser.get(userId);
+      if (!blocks) return false;
+      const day = s.getDay();
+      const shiftStart = s.getHours() * 60 + s.getMinutes();
+      const shiftEnd = e.getHours() * 60 + e.getMinutes();
+      return blocks.some(
+        (b) => b.weekday === day && shiftStart < toMinutes(b.end) && shiftEnd > toMinutes(b.start),
+      );
+    };
 
     // Per medewerker: bezette intervallen + reeds geplande minuten deze week.
     const busy = new Map<string, Interval[]>();
@@ -97,8 +129,12 @@ export class AiService {
       const shiftMinutes = (end - start) / 60000 - (shift.breakMinutes ?? 0);
       const shiftHours = shiftMinutes / 60;
 
-      // Kandidaten zonder conflict.
-      const candidates = employees.filter((e) => !this.overlaps(busy.get(e.id)!, start, end));
+      // Kandidaten zonder conflict én die zich niet onbeschikbaar hebben gemeld.
+      const candidates = employees.filter(
+        (e) =>
+          !this.overlaps(busy.get(e.id)!, start, end) &&
+          !isUnavailable(e.id, shift.startsAt, shift.endsAt),
+      );
       if (candidates.length === 0) continue;
 
       // Score (lager = beter).
