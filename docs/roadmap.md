@@ -22,6 +22,7 @@ verdergaan.
 | — | Beschikbaarheid (portaal) | ✅ | Werknemers geven (on)beschikbaarheid per weekdag door; AI-planner houdt er rekening mee |
 | — | Loonexport (boekhouding) | ✅ | Payroll-CSV per medewerker: gewerkte, over-, nacht- en weekenduren + kosten |
 | — | Documenten | ✅ | Contracten/attesten/certificaten uploaden & downloaden met vervaldatum-waarschuwing |
+| — | Kiosk-/tabletmodus | ✅ | Gedeeld scherm: medewerkers in-/uitklokken door te tikken op hun tegel |
 | 4 | UI/UX (verfijning) | ⏳ | Wireframes → high-fidelity, componentbibliotheek, dag/maand-weergave |
 | 5 | Backend (rest) | ⏳ | Documents, reporting, notifications, chat |
 | 6 | Frontend (rest) | ⏳ | Portalen per rol, admin CMS, rapporten-UI |

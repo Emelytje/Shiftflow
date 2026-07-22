@@ -95,6 +95,63 @@ export class TimeTrackingService {
     });
   }
 
+  /** Lijst medewerkers met hun huidige klokstatus (voor kioskmodus). */
+  async kioskRoster(user: AuthUser) {
+    if (!this.canApprove(user.role)) {
+      throw new ForbiddenException('Alleen leidinggevenden mogen de kiosk gebruiken');
+    }
+    if (!user.companyId) throw new ForbiddenException('Geen bedrijf gekoppeld');
+    const employees = await this.prisma.user.findMany({
+      where: { companyId: user.companyId, isActive: true, role: Role.EMPLOYEE },
+      select: { id: true, firstName: true, lastName: true, color: true },
+      orderBy: { firstName: 'asc' },
+    });
+    const open = await this.prisma.timeEntry.findMany({
+      where: {
+        status: TimeEntryStatus.CLOCKED_IN,
+        user: { companyId: user.companyId },
+      },
+      select: { userId: true, clockIn: true },
+    });
+    const openMap = new Map(open.map((o) => [o.userId, o.clockIn]));
+    return employees.map((e) => ({
+      ...e,
+      clockedIn: openMap.has(e.id),
+      since: openMap.get(e.id) ?? null,
+    }));
+  }
+
+  /** Klokt een medewerker in of uit vanaf een gedeelde kiosk/tablet. */
+  async kioskToggle(user: AuthUser, targetUserId: string) {
+    if (!this.canApprove(user.role)) {
+      throw new ForbiddenException('Alleen leidinggevenden mogen de kiosk gebruiken');
+    }
+    const target = await this.prisma.user.findFirst({
+      where: { id: targetUserId, companyId: user.companyId ?? undefined },
+    });
+    if (!target) throw new NotFoundException('Medewerker niet gevonden');
+
+    const open = await this.currentOpen(targetUserId);
+    if (open) {
+      const clockOut = new Date();
+      const breakdown = computeWorked(open.clockIn, clockOut, open.breakMinutes ?? 0);
+      await this.prisma.timeEntry.update({
+        where: { id: open.id },
+        data: { clockOut, status: TimeEntryStatus.CLOCKED_OUT, ...breakdown },
+      });
+      return { action: 'CLOCK_OUT', workedMinutes: breakdown.workedMinutes };
+    }
+    await this.prisma.timeEntry.create({
+      data: {
+        userId: targetUserId,
+        clockIn: new Date(),
+        method: ClockMethod.KIOSK,
+        status: TimeEntryStatus.CLOCKED_IN,
+      },
+    });
+    return { action: 'CLOCK_IN' };
+  }
+
   async approve(user: AuthUser, id: string) {
     if (!this.canApprove(user.role)) {
       throw new ForbiddenException('Je mag geen uren goedkeuren');

@@ -34,6 +34,16 @@ export class TimeTrackingController {
     return this.time.clockOut(user, dto);
   }
 
+  @Get('kiosk/roster')
+  kioskRoster(@CurrentUser() user: AuthUser) {
+    return this.time.kioskRoster(user);
+  }
+
+  @Post('kiosk/:userId/toggle')
+  kioskToggle(@CurrentUser() user: AuthUser, @Param('userId') userId: string) {
+    return this.time.kioskToggle(user, userId);
+  }
+
   @Patch(':id/approve')
   approve(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.time.approve(user, id);
