@@ -16,6 +16,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY apps/api/package.json ./
 EXPOSE 4000
-# Draai eerst de database-migraties, start dan de API. Exec-vorm met sh -c
-# zodat "&&" betrouwbaar werkt op elk platform (Render, Docker Compose, ...).
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# Draai de migraties, maar laat een (tijdelijke) migratiefout de API NIET
+# platleggen — op gratis plannen kan de DB bij "wakker worden" even haperen.
+# De migraties zijn na de eerste deploy toch al toegepast.
+CMD ["sh", "-c", "npx prisma migrate deploy || echo 'migrate overgeslagen'; node dist/main.js"]
