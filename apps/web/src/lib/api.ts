@@ -23,7 +23,10 @@ export async function apiFetch<T>(
     const body = await res.json().catch(() => ({}));
     throw new Error(body.message || `Request mislukt (${res.status})`);
   }
-  return res.json() as Promise<T>;
+  // Sommige endpoints geven een leeg antwoord terug (bv. null of 204).
+  // Parse veilig zodat dat geen "Unexpected end of JSON input" geeft.
+  const text = await res.text();
+  return (text ? JSON.parse(text) : null) as T;
 }
 
 export function login(email: string, password: string) {
