@@ -122,6 +122,9 @@ export class AiService {
 
     const assignments: AutoPlanResult['assignments'] = [];
     let estimatedCost = 0;
+    // Aantal toewijzingen per medewerker binnen deze AI-run, om de shifts
+    // over zoveel mogelijk verschillende mensen te spreiden.
+    const assignedThisRun = new Map<string, number>();
 
     for (const shift of openShifts) {
       const start = shift.startsAt.getTime();
@@ -145,8 +148,10 @@ export class AiService {
         const contractMin = (e.contractHoursPerWeek ?? 40) * 60;
         const overtimeMin = Math.max(0, projected - contractMin);
         const cost = (e.hourlyCost ?? 15) * shiftHours;
+        const runCount = assignedThisRun.get(e.id) ?? 0;
 
         const score =
+          runCount * 1_000_000 + // spreid eerst over zoveel mogelijk mensen
           overtimeMin * 1000 + // overuren zwaar bestraffen
           already * 0.5 + // werklast spreiden
           cost * 1; // kosten laag houden
@@ -169,6 +174,7 @@ export class AiService {
       });
       busy.get(best.id)!.push({ start, end });
       plannedMinutes.set(best.id, (plannedMinutes.get(best.id) ?? 0) + shiftMinutes);
+      assignedThisRun.set(best.id, (assignedThisRun.get(best.id) ?? 0) + 1);
 
       const emp = employees.find((e) => e.id === best!.id)!;
       estimatedCost += (emp.hourlyCost ?? 15) * shiftHours;
